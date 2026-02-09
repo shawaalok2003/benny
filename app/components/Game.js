@@ -31,14 +31,13 @@ export default function Game() {
   const BALL_SIZE = 25
   const PADDLE_WIDTH = 120
   const PADDLE_HEIGHT = 15
-  const BASE_BALL_SPEED = 4
+  const BASE_BALL_SPEED = 12
   
   // Load high score from localStorage
   useEffect(() => {
-    const savedHighScore = localStorage.getItem('bennyGameHighScore')
-    if (savedHighScore) {
-      setHighScore(parseInt(savedHighScore))
-    }
+    // Clear localStorage data
+    localStorage.removeItem('bennyGameHighScore')
+    setHighScore(0)
   }, [])
   
   // Calculate current speed based on level
