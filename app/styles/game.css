@@ -169,7 +169,7 @@
 .sound-toggle {
   position: absolute;
   right: 30px;
-  top: -90px;
+  top: -120px;
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
@@ -234,6 +234,28 @@
   z-index: 5;
   pointer-events: none;
   will-change: left;
+}
+
+@media (max-width: 768px) {
+  .game-container {
+    animation: none;
+  }
+
+  .ball {
+    animation: none;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.6);
+  }
+
+  .paddle {
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+  }
+
+  .score,
+  .high-score,
+  .level-indicator,
+  .start-message {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  }
 }
 
 /* Celebration Overlay */

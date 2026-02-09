@@ -26,6 +26,8 @@ export default function Game() {
   const animationRef = useRef()
   const lastScoreUpdate = useRef(0)
   const particlesRef = useRef([])
+  const lowPowerRef = useRef(false)
+  const lastFrameTimeRef = useRef(0)
 
   // Game constants
   const BALL_SIZE = 25
@@ -39,6 +41,14 @@ export default function Game() {
     localStorage.removeItem('bennyGameHighScore')
     setHighScore(0)
   }, [])
+
+  // Detect low-power/mobile devices to reduce load
+  useEffect(() => {
+    const userAgent = navigator.userAgent || ''
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(userAgent)
+    const hasLowMemory = typeof navigator.deviceMemory === 'number' && navigator.deviceMemory <= 4
+    lowPowerRef.current = isMobile || hasLowMemory
+  }, [])
   
   // Calculate current speed based on level
   const getCurrentSpeed = () => {
@@ -49,9 +59,10 @@ export default function Game() {
   const checkAndAddBalls = () => {
     const gameArea = gameAreaRef.current
     if (!gameArea) return
-    
-    const shouldHaveBalls = Math.floor(level / 3) + 1
-    if (ballsRef.current.length < shouldHaveBalls && ballsRef.current.length < 5) {
+
+    const maxBalls = lowPowerRef.current ? 1 : 5
+    const shouldHaveBalls = lowPowerRef.current ? 1 : Math.floor(level / 3) + 1
+    if (ballsRef.current.length < shouldHaveBalls && ballsRef.current.length < maxBalls) {
       const rect = gameArea.getBoundingClientRect()
       const currentSpeed = getCurrentSpeed()
       const newBall = {
@@ -116,6 +127,13 @@ export default function Game() {
     if (gameFinished || !gameStarted || showCelebration || gameOver) return
 
     const gameLoop = () => {
+      const now = performance.now()
+      if (lowPowerRef.current && now - lastFrameTimeRef.current < 33) {
+        animationRef.current = requestAnimationFrame(gameLoop)
+        return
+      }
+      lastFrameTimeRef.current = now
+
       const gameArea = gameAreaRef.current
       if (!gameArea) {
         animationRef.current = requestAnimationFrame(gameLoop)
@@ -164,8 +182,9 @@ export default function Game() {
           const hitPos = (ballCenterX - paddleRef.current.x) / PADDLE_WIDTH
           ball.vx = (hitPos - 0.5) * 8
           
-          // Create particle effect
-          for (let i = 0; i < 5; i++) {
+          // Create particle effect (reduced on low-power devices)
+          const particleCount = lowPowerRef.current ? 1 : 5
+          for (let i = 0; i < particleCount; i++) {
             particlesRef.current.push({
               id: Date.now() + i,
               x: ballCenterX,
@@ -244,31 +263,33 @@ export default function Game() {
       }
       gameAreaRef.current.style.setProperty('--paddle-x', `${paddleRef.current.x}px`)
       
-      // Render additional balls and particles
-      const existingBalls = gameAreaRef.current.querySelectorAll('.ball-multi')
-      existingBalls.forEach(ball => ball.remove())
-      
-      const existingParticles = gameAreaRef.current.querySelectorAll('.particle')
-      existingParticles.forEach(p => p.remove())
-      
-      ballsRef.current.slice(1).forEach(ball => {
-        const ballEl = document.createElement('div')
-        ballEl.className = 'ball ball-multi'
-        ballEl.style.left = `${ball.x}px`
-        ballEl.style.top = `${ball.y}px`
-        ballEl.style.width = `${BALL_SIZE}px`
-        ballEl.style.height = `${BALL_SIZE}px`
-        gameAreaRef.current.appendChild(ballEl)
-      })
-      
-      particlesRef.current.forEach(particle => {
-        const pEl = document.createElement('div')
-        pEl.className = 'particle'
-        pEl.style.left = `${particle.x}px`
-        pEl.style.top = `${particle.y}px`
-        pEl.style.opacity = particle.life / 20
-        gameAreaRef.current.appendChild(pEl)
-      })
+      // Render additional balls and particles (skip on low-power devices)
+      if (!lowPowerRef.current) {
+        const existingBalls = gameAreaRef.current.querySelectorAll('.ball-multi')
+        existingBalls.forEach(ball => ball.remove())
+
+        const existingParticles = gameAreaRef.current.querySelectorAll('.particle')
+        existingParticles.forEach(p => p.remove())
+
+        ballsRef.current.slice(1).forEach(ball => {
+          const ballEl = document.createElement('div')
+          ballEl.className = 'ball ball-multi'
+          ballEl.style.left = `${ball.x}px`
+          ballEl.style.top = `${ball.y}px`
+          ballEl.style.width = `${BALL_SIZE}px`
+          ballEl.style.height = `${BALL_SIZE}px`
+          gameAreaRef.current.appendChild(ballEl)
+        })
+
+        particlesRef.current.forEach(particle => {
+          const pEl = document.createElement('div')
+          pEl.className = 'particle'
+          pEl.style.left = `${particle.x}px`
+          pEl.style.top = `${particle.y}px`
+          pEl.style.opacity = particle.life / 20
+          gameAreaRef.current.appendChild(pEl)
+        })
+      }
 
       animationRef.current = requestAnimationFrame(gameLoop)
     }
