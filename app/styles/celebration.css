@@ -163,7 +163,7 @@
 
 /* Birthday Image Container */
 .birthday-image-container {
-  margin-top: 140px;
+  margin-top: 180px;
   margin-bottom: 10px;
   animation: imageFloat 3s ease-in-out infinite;
   position: relative;
